@@ -15,6 +15,7 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.image.load("images/player.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (50, 40))
         self.rect = self.image.get_rect()
+        self.radius = 25  # 圓形碰撞半徑
         self.rect.centerx = WIDTH // 2
         self.rect.bottom = HEIGHT - 30
         self.speedx = 8
@@ -40,6 +41,7 @@ class Bullet(pygame.sprite.Sprite):
         self.image = pygame.image.load("images/bullet.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (10, 20))
         self.rect = self.image.get_rect()
+        self.radius = 5  # 圓形碰撞半徑
         self.rect.centerx = x
         self.rect.bottom = y
         self.speedy = -10
@@ -56,6 +58,7 @@ class Rock(pygame.sprite.Sprite):
         self.image = pygame.image.load("images/rock.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (30, 30))
         self.rect = self.image.get_rect()
+        self.radius = 15  # 圓形碰撞半徑
         self.reset()
 
     def update(self):
@@ -114,16 +117,16 @@ def main():
         # 更新
         all_sprites.update()
 
-        # 子彈打中石頭
-        hits = pygame.sprite.groupcollide(rocks, bullets, True, True)
+        # 子彈打中石頭（圓形碰撞）
+        hits = pygame.sprite.groupcollide(rocks, bullets, True, True, pygame.sprite.collide_circle)
         for hit in hits:
             score += 10
             new_rock = Rock()
             all_sprites.add(new_rock)
             rocks.add(new_rock)
 
-        # 飛船撞到石頭 → 結束遊戲
-        player_hits = pygame.sprite.spritecollide(player, rocks, False)
+        # 飛船撞到石頭 → 結束遊戲（圓形碰撞）
+        player_hits = pygame.sprite.spritecollide(player, rocks, False, pygame.sprite.collide_circle)
         if player_hits:
             print("飛船被撞到！遊戲結束")
             running = False
