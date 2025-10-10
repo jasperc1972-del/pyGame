@@ -1,6 +1,8 @@
 import pygame
 import random
 
+from openpyxl.styles.colors import BLACK
+
 # 遊戲設定
 FPS = 60
 WIDTH, HEIGHT = 600, 600
@@ -55,13 +57,27 @@ class Bullet(pygame.sprite.Sprite):
 class Rock(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
-        self.image = pygame.image.load("images/rock.png").convert_alpha()
-        self.image = pygame.transform.scale(self.image, (30, 30))
+        self.image_ori = pygame.image.load("images/rock.png").convert_alpha()
+        self.image_ori = pygame.transform.scale(self.image_ori, (30, 30))
+        self.image = self.image_ori.copy()
         self.rect = self.image.get_rect()
-        self.radius = 15  # 圓形碰撞半徑
-        self.reset()
+        self.radius = self.rect.width * 0.85 / 2
+        self.rect.x = random.randrange(0, WIDTH - self.rect.width)
+        self.rect.y = random.randrange(-100, -40)
+        self.speedx = random.randrange(-5, 5)
+        self.speedy = random.randrange(-3, 5)
+        self.total_degree = 0
+        self.rot_degree = 3
+
+    def rotate(self):
+        self.total_degree = (self.total_degree + self.rot_degree) % 360
+        old_center = self.rect.center
+        self.image = pygame.transform.rotate(self.image_ori, self.total_degree)
+        self.rect = self.image.get_rect()
+        self.rect.center = old_center
 
     def update(self):
+        self.rotate()
         self.rect.y += self.speedy
         self.rect.x += self.speedx
         if self.rect.top > HEIGHT or self.rect.left > WIDTH or self.rect.right < 0:
@@ -72,8 +88,7 @@ class Rock(pygame.sprite.Sprite):
         self.rect.y = random.randint(-100, -40)
         self.speedy = random.randint(2, 5)
         self.speedx = random.randint(-2, 2)
-
-# 主程式
+#z 主程式
 def main():
     global all_sprites, bullets, rocks, score
 
