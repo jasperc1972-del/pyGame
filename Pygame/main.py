@@ -1,13 +1,23 @@
 import pygame
 import random
 
-from openpyxl.styles.colors import BLACK
+# 顏色定義
+BLACK = (0, 0, 0)
+
+# 隕石尺寸清單
+ROCK_SIZES = [
+    (20, 20),
+    (30, 30),
+    (40, 40),
+    (50, 50),
+    (60, 60),
+    (65, 65),
+    (75, 75)
+]
 
 # 遊戲設定
 FPS = 60
 WIDTH, HEIGHT = 600, 600
-
-# 分數
 score = 0
 
 # 飛船類別
@@ -17,7 +27,7 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.image.load("images/player.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (50, 40))
         self.rect = self.image.get_rect()
-        self.radius = 25  # 圓形碰撞半徑
+        self.radius = 25
         self.rect.centerx = WIDTH // 2
         self.rect.bottom = HEIGHT - 30
         self.speedx = 8
@@ -43,7 +53,7 @@ class Bullet(pygame.sprite.Sprite):
         self.image = pygame.image.load("images/bullet.png").convert_alpha()
         self.image = pygame.transform.scale(self.image, (10, 20))
         self.rect = self.image.get_rect()
-        self.radius = 5  # 圓形碰撞半徑
+        self.radius = 5
         self.rect.centerx = x
         self.rect.bottom = y
         self.speedy = -10
@@ -53,21 +63,24 @@ class Bullet(pygame.sprite.Sprite):
         if self.rect.bottom < 0:
             self.kill()
 
-# 石頭類別
+# 隕石類別（支援多尺寸與旋轉）
 class Rock(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
+        self.size = random.choice(ROCK_SIZES)
         self.image_ori = pygame.image.load("images/rock.png").convert_alpha()
-        self.image_ori = pygame.transform.scale(self.image_ori, (30, 30))
+        self.image_ori = pygame.transform.scale(self.image_ori, self.size)
         self.image = self.image_ori.copy()
         self.rect = self.image.get_rect()
         self.radius = self.rect.width * 0.85 / 2
+
         self.rect.x = random.randrange(0, WIDTH - self.rect.width)
         self.rect.y = random.randrange(-100, -40)
-        self.speedx = random.randrange(-5, 5)
-        self.speedy = random.randrange(-3, 5)
+        self.speedx = random.randrange(-3, 3)
+        self.speedy = random.randrange(1, 4)
+
         self.total_degree = 0
-        self.rot_degree = 3
+        self.rot_degree = random.choice([2, 3, 4])
 
     def rotate(self):
         self.total_degree = (self.total_degree + self.rot_degree) % 360
@@ -84,11 +97,20 @@ class Rock(pygame.sprite.Sprite):
             self.reset()
 
     def reset(self):
+        self.size = random.choice(ROCK_SIZES)
+        self.image_ori = pygame.image.load("images/rock.png").convert_alpha()
+        self.image_ori = pygame.transform.scale(self.image_ori, self.size)
+        self.image = self.image_ori.copy()
+        self.rect = self.image.get_rect()
+        self.radius = self.rect.width * 0.85 / 2
         self.rect.x = random.randint(0, WIDTH - self.rect.width)
         self.rect.y = random.randint(-100, -40)
-        self.speedy = random.randint(2, 5)
-        self.speedx = random.randint(-2, 2)
-#z 主程式
+        self.speedy = random.randint(1, 4)
+        self.speedx = random.randint(-3, 3)
+        self.total_degree = 0
+        self.rot_degree = random.choice([2, 3, 4])
+
+# 主程式
 def main():
     global all_sprites, bullets, rocks, score
 
@@ -98,26 +120,21 @@ def main():
     clock = pygame.time.Clock()
     font = pygame.font.SysFont("Arial", 24)
 
-    # 載入背景圖
     background = pygame.image.load("images/background.png").convert()
     background = pygame.transform.scale(background, (WIDTH, HEIGHT))
 
-    # 建立群組
     all_sprites = pygame.sprite.Group()
     bullets = pygame.sprite.Group()
     rocks = pygame.sprite.Group()
 
-    # 建立玩家
     player = Player()
     all_sprites.add(player)
 
-    # 建立石頭
-    for i in range(5):
+    for i in range(7):  # 建立 7 顆不同大小的隕石
         rock = Rock()
         all_sprites.add(rock)
         rocks.add(rock)
 
-    # 主迴圈
     running = True
     while running:
         clock.tick(FPS)
@@ -126,13 +143,11 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_z:  # Z 鍵發射
+                if event.key == pygame.K_z:
                     player.shoot()
 
-        # 更新
         all_sprites.update()
 
-        # 子彈打中石頭（圓形碰撞）
         hits = pygame.sprite.groupcollide(rocks, bullets, True, True, pygame.sprite.collide_circle)
         for hit in hits:
             score += 10
@@ -140,22 +155,19 @@ def main():
             all_sprites.add(new_rock)
             rocks.add(new_rock)
 
-        # 飛船撞到石頭 → 結束遊戲（圓形碰撞）
         player_hits = pygame.sprite.spritecollide(player, rocks, False, pygame.sprite.collide_circle)
         if player_hits:
             print("飛船被撞到！遊戲結束")
             running = False
 
-        # 畫面顯示
         screen.blit(background, (0, 0))
         all_sprites.draw(screen)
-        score_text = font.render(f"Score: {score}", True, (0, 0, 0))
+        score_text = font.render(f"Score: {score}", True, BLACK)
         screen.blit(score_text, (10, 10))
         pygame.display.flip()
 
     pygame.quit()
 
-# 執行主程式
 if __name__ == "__main__":
     try:
         main()
