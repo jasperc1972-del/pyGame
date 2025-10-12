@@ -3,6 +3,7 @@ import random
 
 # 顏色定義
 BLACK = (0, 0, 0)
+RED = (255, 0, 0)
 
 # 隕石尺寸清單
 ROCK_SIZES = [
@@ -26,6 +27,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.bottom = HEIGHT - 30
         self.speedx = 8
         self.shoot_sound = shoot_sound
+        self.health = 3
 
     def update(self):
         keys = pygame.key.get_pressed()
@@ -93,7 +95,19 @@ class Rock(pygame.sprite.Sprite):
     def reset(self):
         self.__init__()
 
-# 顯示遊戲結束畫面（使用中文字型）
+# 顯示生命條
+def draw_health_bar(surf, x, y, health, max_health, font):
+    label = font.render("生命值", True, BLACK)
+    surf.blit(label, (x, y - 22))
+    BAR_WIDTH = 100
+    BAR_HEIGHT = 15
+    fill = int((health / max_health) * BAR_WIDTH)
+    outline_rect = pygame.Rect(x, y, BAR_WIDTH, BAR_HEIGHT)
+    fill_rect = pygame.Rect(x, y, fill, BAR_HEIGHT)
+    pygame.draw.rect(surf, RED, fill_rect)
+    pygame.draw.rect(surf, BLACK, outline_rect, 2)
+
+# 顯示遊戲結束畫面（不播放音效）
 def show_game_over_screen(screen, font, score):
     game_over_text = font.render("遊戲結束！", True, BLACK)
     score_text = font.render(f"你的分數：{score}", True, BLACK)
@@ -130,9 +144,8 @@ def main():
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("飛船射擊遊戲")
     clock = pygame.time.Clock()
-
-    # 使用支援中文的字型檔案
-    font = pygame.font.Font("C:/Windows/Fonts/msjh.ttc", 15)
+    font = pygame.font.Font("C:/Windows/Fonts/msjh.ttc", 28)
+    small_font = pygame.font.Font("C:/Windows/Fonts/msjh.ttc", 20)
 
     pygame.mixer.music.load("sound/background.wav")
     pygame.mixer.music.set_volume(0.5)
@@ -177,17 +190,23 @@ def main():
             all_sprites.add(new_rock)
             rocks.add(new_rock)
 
-        player_hits = pygame.sprite.spritecollide(player, rocks, False, pygame.sprite.collide_circle)
-        if player_hits:
-            print("飛船被撞到！遊戲結束")
+        player_hits = pygame.sprite.spritecollide(player, rocks, True, pygame.sprite.collide_circle)
+        for hit in player_hits:
+            player.health -= 1
+            new_rock = Rock()
+            all_sprites.add(new_rock)
+            rocks.add(new_rock)
+
+        if player.health <= 0:
             show_game_over_screen(screen, font, score)
             main()
             return
 
         screen.blit(background, (0, 0))
         all_sprites.draw(screen)
-        score_text = font.render(f"分數：{score}", True, BLACK)
+        score_text = small_font.render(f"分數：{score}", True, BLACK)
         screen.blit(score_text, (10, 10))
+        draw_health_bar(screen, 10, 50, player.health, 3, small_font)
         pygame.display.flip()
 
     pygame.quit()
